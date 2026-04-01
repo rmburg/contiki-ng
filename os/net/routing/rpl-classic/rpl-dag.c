@@ -58,6 +58,10 @@
 #include <limits.h>
 #include <string.h>
 
+#ifdef WITH_FORCED_PARENT
+#include "forced_parent.h"
+#endif
+
 #define LOG_MODULE "RPL"
 #define LOG_LEVEL LOG_LEVEL_RPL
 
@@ -1486,10 +1490,56 @@ add_nbr_from_dio(uip_ipaddr_t *from, rpl_dio_t *dio)
   }
   return 1;
 }
+#ifdef WITH_FORCED_PARENT
+const linkaddr_t linkAddrFromIpAddr(const uip_ipaddr_t *ipaddr) {
+    linkaddr_t lladdr = {{0}};
+    if (ipaddr == NULL) { return lladdr; }
+    // The IEEE 802.15.4 MAC address is embedded in the IPv6 address following the EUI-64 format
+    lladdr.u8[0] = ipaddr->u8[8] ^ 0x02;// Toggle the Universal/Local (U/L) bit
+    lladdr.u8[1] = ipaddr->u8[9];
+    lladdr.u8[2] = ipaddr->u8[10];
+    lladdr.u8[3] = ipaddr->u8[11];
+    lladdr.u8[4] = ipaddr->u8[12];
+    lladdr.u8[5] = ipaddr->u8[13];
+    lladdr.u8[6] = ipaddr->u8[14];
+    lladdr.u8[7] = ipaddr->u8[15];
+    return lladdr;
+}
+#endif
 /*---------------------------------------------------------------------------*/
 void
 rpl_process_dio(uip_ipaddr_t *from, rpl_dio_t *dio)
 {
+#ifdef WITH_FORCED_PARENT
+  const linkaddr_t from_lladdr = linkAddrFromIpAddr(from);
+
+  LOG_INFO("Received DIO from ");
+  LOG_INFO_6ADDR(from);
+  LOG_INFO_(", lladdr=");
+  LOG_INFO_LLADDR(&from_lladdr);
+  LOG_INFO_("\n");
+
+  const linkaddr_t* forced_parent = get_forced_parent(&linkaddr_node_addr);
+
+  if (forced_parent != NULL) {
+    if (linkaddr_cmp(forced_parent, &from_lladdr)) {
+      LOG_INFO("Sender is forced parent!\n");
+    } else {
+      LOG_INFO("Ignoring DIO from ");
+      LOG_INFO_LLADDR(&from_lladdr);
+      LOG_INFO_(", forced parent is ");
+      LOG_INFO_LLADDR(forced_parent);
+      LOG_INFO_("\n");
+
+      return;
+    }
+  } else {
+    LOG_INFO("No forced parent set.\n");
+  }
+#else
+  LOG_INFO("Received DIO, parent forcing disabled\n");
+#endif
+
   rpl_instance_t *instance;
   rpl_dag_t *dag, *previous_dag;
   rpl_parent_t *p;
