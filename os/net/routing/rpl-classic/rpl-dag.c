@@ -1491,6 +1491,7 @@ add_nbr_from_dio(uip_ipaddr_t *from, rpl_dio_t *dio)
   return 1;
 }
 #ifdef WITH_FORCED_PARENT
+// Source: adapted from bachlor thesis of Manu Karki
 const linkaddr_t linkAddrFromIpAddr(const uip_ipaddr_t *ipaddr) {
     linkaddr_t lladdr = {{0}};
     if (ipaddr == NULL) { return lladdr; }
