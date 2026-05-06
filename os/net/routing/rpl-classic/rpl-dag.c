@@ -1490,23 +1490,6 @@ add_nbr_from_dio(uip_ipaddr_t *from, rpl_dio_t *dio)
   }
   return 1;
 }
-#ifdef WITH_FORCED_PARENT
-// Source: adapted from bachlor thesis of Manu Karki
-const linkaddr_t linkAddrFromIpAddr(const uip_ipaddr_t *ipaddr) {
-    linkaddr_t lladdr = {{0}};
-    if (ipaddr == NULL) { return lladdr; }
-    // The IEEE 802.15.4 MAC address is embedded in the IPv6 address following the EUI-64 format
-    lladdr.u8[0] = ipaddr->u8[8] ^ 0x02;// Toggle the Universal/Local (U/L) bit
-    lladdr.u8[1] = ipaddr->u8[9];
-    lladdr.u8[2] = ipaddr->u8[10];
-    lladdr.u8[3] = ipaddr->u8[11];
-    lladdr.u8[4] = ipaddr->u8[12];
-    lladdr.u8[5] = ipaddr->u8[13];
-    lladdr.u8[6] = ipaddr->u8[14];
-    lladdr.u8[7] = ipaddr->u8[15];
-    return lladdr;
-}
-#endif
 /*---------------------------------------------------------------------------*/
 void
 rpl_process_dio(uip_ipaddr_t *from, rpl_dio_t *dio)
